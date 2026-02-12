@@ -83,3 +83,25 @@ trainer = Trainer(
     train_dataset=train_dataset,
     eval_dataset=test_dataset
 )
+
+# Step 13: Train the model
+trainer.train()
+
+# Step 14: Evaluate the model
+preds_output = trainer.predict(test_dataset)
+preds = preds_output.predictions.argmax(-1)  # get predicted labels
+
+# Step 15: Print evaluation metrics
+print("Accuracy:", accuracy_score(test_labels, preds))
+print("\nClassification Report:\n", classification_report(test_labels, preds, target_names=['negative', 'positive']))
+
+# Step 16: Predict on new tweets
+def predict_sentiment(texts):
+    encodings = tokenizer(texts, truncation=True, padding=True, return_tensors='pt')
+    outputs = model(**encodings)
+    predictions = torch.argmax(outputs.logits, dim=1)
+    return ["positive" if p==1 else "negative" for p in predictions]
+
+# Example usage
+new_tweets = ["I love flying with Delta!", "United Airlines ruined my trip."]
+print(predict_sentiment(new_tweets))
