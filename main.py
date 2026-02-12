@@ -42,3 +42,44 @@ tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 # Step 8: Tokenize the text 
 train_encodings = tokenizer(train_texts, truncation=True, padding=True)
 test_encodings = tokenizer(test_texts, truncation=True, padding=True)
+
+# Step 9: Create a PyTorch Dataset
+class AirlineDataset(Dataset):
+    def __init__(self, encodings, labels):
+        self.encodings = encodings
+        self.labels = labels
+    
+    def __len__(self):
+        return len(self.labels)
+    
+    def __getitem__(self, idx):
+        item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
+        item['labels'] = torch.tensor(self.labels[idx])
+        return item
+
+train_dataset = AirlineDataset(train_encodings, train_labels)
+test_dataset = AirlineDataset(test_encodings, test_labels)
+
+# Step 10: Load pre-trained DistilBERT for classification
+model = DistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased', num_labels=2)
+
+# Step 11: Set training arguments
+training_args = TrainingArguments(
+    output_dir='./results',
+    num_train_epochs=2,
+    per_device_train_batch_size=16,
+    per_device_eval_batch_size=16,
+    warmup_steps=50,
+    weight_decay=0.01,
+    logging_dir='./logs',
+    logging_steps=50
+)
+
+
+# Step 12: Define Trainer
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=train_dataset,
+    eval_dataset=test_dataset
+)
